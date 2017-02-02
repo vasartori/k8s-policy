@@ -34,159 +34,308 @@ network_policy_empty = {"kind": "networkpolicy",
                         "spec": {}}
 network_policy_empty_result = []
 
-# NetworkPolicy with only ports defined.
+# Ingress NetworkPolicy with only ports defined.
 ports = [{"port": 80, "protocol": "TCP"},
          {"port": 443, "protocol": "UDP"}]
 spec = {"ingress": [{"ports": ports}]}
-network_policy_ports = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_ports_result = [
-        Rule(action="allow", dst_ports=[80], protocol="tcp"),
-        Rule(action="allow", dst_ports=[443], protocol="udp")
+ingress_network_policy_ports = {"kind": "networkpolicy",
+                                "apiversion": "net.beta.kubernetes.io",
+                                "metadata": {"namespace": "ns",
+                                             "name": "test-policy"},
+                                "spec": spec}
+ingress_network_policy_ports_result = [
+    Rule(action="allow", dst_ports=[80], protocol="tcp"),
+    Rule(action="allow", dst_ports=[443], protocol="udp")
 ]
 
-# NetworkPolicy with only pods defined by labels.
+# Egress NetworkPolicy with only ports defined.
+ports = [{"port": 80, "protocol": "TCP"},
+         {"port": 443, "protocol": "UDP"}]
+spec = {"egress": [{"ports": ports}]}
+egress_network_policy_ports = {"kind": "networkpolicy",
+                               "apiversion": "net.beta.kubernetes.io",
+                               "metadata": {"namespace": "ns",
+                                            "name": "test-policy"},
+                               "spec": spec}
+egress_network_policy_ports_result = [
+    Rule(action="allow", dst_ports=[80], protocol="tcp"),
+    Rule(action="allow", dst_ports=[443], protocol="udp")
+]
+
+# Ingress NetworkPolicy with only pods defined by labels.
 froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
 spec = {"ingress": [{"from": froms}]}
-network_policy_froms = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_froms_result = [
-        Rule(action="allow",
-             src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'")
+ingress_network_policy_froms = {"kind": "networkpolicy",
+                                "apiversion": "net.beta.kubernetes.io",
+                                "metadata": {"namespace": "ns",
+                                             "name": "test-policy"},
+                                "spec": spec}
+ingress_network_policy_froms_result = [
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'")
 ]
 
-# NetworkPolicy with ports and pods defined by labels.
+# Egress NetworkPolicy with only pods defined by labels.
+froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
+spec = {"egress": [{"from": froms}]}
+egress_network_policy_froms = {"kind": "networkpolicy",
+                               "apiversion": "net.beta.kubernetes.io",
+                               "metadata": {"namespace": "ns",
+                                            "name": "test-policy"},
+                               "spec": spec}
+egress_network_policy_froms_result = [
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'")
+]
+
+# Ingress NetworkPolicy with ports and pods defined by labels.
 froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
 ports = [{"port": 80, "protocol": "TCP"},
          {"port": 443, "protocol": "UDP"}]
 spec = {"ingress": [{"from": froms, "ports": ports}]}
-network_policy_both = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_both_result = [
-        Rule(action="allow",
-             src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
-             dst_ports=[80], protocol="tcp"),
-        Rule(action="allow",
-             src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
-             dst_ports=[443], protocol="udp")
+ingress_network_policy_both = {"kind": "networkpolicy",
+                               "apiversion": "net.beta.kubernetes.io",
+                               "metadata": {"namespace": "ns",
+                                            "name": "test-policy"},
+                               "spec": spec}
+ingress_network_policy_both_result = [
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         dst_ports=[80], protocol="tcp"),
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         dst_ports=[443], protocol="udp")
 ]
 
-# NetworkPolicy with pods and namespaces defined by labels.
+# Egress NetworkPolicy with ports and pods defined by labels.
+froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
+ports = [{"port": 80, "protocol": "TCP"},
+         {"port": 443, "protocol": "UDP"}]
+spec = {"egress": [{"from": froms, "ports": ports}]}
+egress_network_policy_both = {"kind": "networkpolicy",
+                              "apiversion": "net.beta.kubernetes.io",
+                              "metadata": {"namespace": "ns",
+                                           "name": "test-policy"},
+                              "spec": spec}
+egress_network_policy_both_result = [
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         dst_ports=[80], protocol="tcp"),
+    Rule(action="allow",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         dst_ports=[443], protocol="udp")
+]
+
+# Ingress NetworkPolicy with pods and namespaces defined by labels.
 froms = [{"namespaceSelector": {"matchLabels": {"role": "prod"}}},
          {"podSelector": {"matchLabels": {"tier": "db"}}}]
 spec = {"ingress": [{"from": froms}]}
-network_policy_from_pods_ns = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_from_pods_ns_result = [
-        Rule(action="allow", src_selector="k8s_ns/label/role == 'prod'"),
-        Rule(action="allow", src_selector="tier == 'db' && calico/k8s_ns == 'ns'")
+ingress_network_policy_from_pods_ns = {"kind": "networkpolicy",
+                                       "apiversion": "net.beta.kubernetes.io",
+                                       "metadata": {"namespace": "ns",
+                                                    "name": "test-policy"},
+                                       "spec": spec}
+ingress_network_policy_from_pods_ns_result = [
+    Rule(action="allow", src_selector="k8s_ns/label/role == 'prod'"),
+    Rule(action="allow", src_selector="tier == 'db' && calico/k8s_ns == 'ns'")
 ]
 
-# NetworkPolicy with pods and namespaces defined by expressions.
+# Egress NetworkPolicy with pods and namespaces defined by labels.
+froms = [{"namespaceSelector": {"matchLabels": {"role": "prod"}}},
+         {"podSelector": {"matchLabels": {"tier": "db"}}}]
+spec = {"egress": [{"from": froms}]}
+egress_network_policy_from_pods_ns = {"kind": "networkpolicy",
+                                      "apiversion": "net.beta.kubernetes.io",
+                                      "metadata": {"namespace": "ns",
+                                                   "name": "test-policy"},
+                                      "spec": spec}
+egress_network_policy_from_pods_ns_result = [
+    Rule(action="allow", src_selector="k8s_ns/label/role == 'prod'"),
+    Rule(action="allow", src_selector="tier == 'db' && calico/k8s_ns == 'ns'")
+]
+
+# Ingress NetworkPolicy with pods and namespaces defined by expressions.
 froms = [{"namespaceSelector": {"matchExpressions": [{"key": "role",
-                                              "operator": "NotIn",
-                                              "values": ["prod", "staging"]}]}},
+                                                      "operator": "NotIn",
+                                                      "values": ["prod",
+                                                                 "staging"]}]}},
          {"podSelector": {"matchExpressions": [{"key": "tier",
-                                        "operator": "In",
-                                        "values": ["db"]}]}}]
+                                                "operator": "In",
+                                                "values": ["db"]}]}}]
 spec = {"ingress": [{"from": froms}]}
-network_policy_from_pods_ns_expr = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_from_pods_ns_expr_result = [
-        Rule(action="allow", src_selector="k8s_ns/label/role not in { \"prod\", \"staging\" }"),
-        Rule(action="allow", src_selector="tier in { \"db\" } && calico/k8s_ns == 'ns'")
+ingress_network_policy_from_pods_ns_expr = {"kind": "networkpolicy",
+                                            "apiversion": "net.beta.kubernetes.io",
+                                            "metadata": {"namespace": "ns",
+                                                         "name": "test-policy"},
+                                            "spec": spec}
+ingress_network_policy_from_pods_ns_expr_result = [
+    Rule(action="allow",
+         src_selector="k8s_ns/label/role not in { \"prod\", \"staging\" }"),
+    Rule(action="allow",
+         src_selector="tier in { \"db\" } && calico/k8s_ns == 'ns'")
 ]
 
-# NetworkPolicy all pods and all namespaces.
+# Egress NetworkPolicy with pods and namespaces defined by expressions.
+froms = [{"namespaceSelector": {"matchExpressions": [{"key": "role",
+                                                      "operator": "NotIn",
+                                                      "values": ["prod",
+                                                                 "staging"]}]}},
+         {"podSelector": {"matchExpressions": [{"key": "tier",
+                                                "operator": "In",
+                                                "values": ["db"]}]}}]
+spec = {"egress": [{"from": froms}]}
+egress_network_policy_from_pods_ns_expr = {"kind": "networkpolicy",
+                                           "apiversion": "net.beta.kubernetes.io",
+                                           "metadata": {"namespace": "ns",
+                                                        "name": "test-policy"},
+                                           "spec": spec}
+
+egress_network_policy_from_pods_ns_expr_result = [
+    Rule(action="allow",
+         src_selector="k8s_ns/label/role not in { \"prod\", \"staging\" }"),
+    Rule(action="allow",
+         src_selector="tier in { \"db\" } && calico/k8s_ns == 'ns'")
+]
+
+# Ingress NetworkPolicy all pods and all namespaces.
 froms = [{"namespaceSelector": None},
          {"podSelector": None}]
 spec = {"ingress": [{"from": froms}]}
-network_policy_from_all = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_from_all_result = [
-        Rule(action="allow", src_selector="has(calico/k8s_ns)"),
-        Rule(action="allow", src_selector="calico/k8s_ns == 'ns'")
+ingress_network_policy_from_all = {"kind": "networkpolicy",
+                                   "apiversion": "net.beta.kubernetes.io",
+                                   "metadata": {"namespace": "ns",
+                                                "name": "test-policy"},
+                                   "spec": spec}
+ingress_network_policy_from_all_result = [
+    Rule(action="allow", src_selector="has(calico/k8s_ns)"),
+    Rule(action="allow", src_selector="calico/k8s_ns == 'ns'")
 ]
 
-# Invalid: Cannot declare both namespaces and pods in same from.
+# Egress NetworkPolicy all pods and all namespaces.
+froms = [{"namespaceSelector": None},
+         {"podSelector": None}]
+spec = {"egress": [{"from": froms}]}
+egress_network_policy_from_all = {"kind": "networkpolicy",
+                                  "apiversion": "net.beta.kubernetes.io",
+                                  "metadata": {"namespace": "ns",
+                                               "name": "test-policy"},
+                                  "spec": spec}
+egress_network_policy_from_all_result = [
+    Rule(action="allow", src_selector="has(calico/k8s_ns)"),
+    Rule(action="allow", src_selector="calico/k8s_ns == 'ns'")
+]
+
+# Ingress Invalid: Cannot declare both namespaces and pods in same from.
 froms = [{"namespaceSelector": None, "podSelector": None}]
 spec = {"ingress": [{"from": froms}]}
-network_policy_invalid_both = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_invalid_both_result =  PolicyError
+ingress_network_policy_invalid_both = {"kind": "networkpolicy",
+                                       "apiversion": "net.beta.kubernetes.io",
+                                       "metadata": {"namespace": "ns",
+                                                    "name": "test-policy"},
+                                       "spec": spec}
+ingress_network_policy_invalid_both_result = PolicyError
 
-# No ingress rules - should allow all.
+# Egress Invalid: Cannot declare both namespaces and pods in same from.
+froms = [{"namespaceSelector": None, "podSelector": None}]
+spec = {"egress": [{"from": froms}]}
+egress_network_policy_invalid_both = {"kind": "networkpolicy",
+                               "apiversion": "net.beta.kubernetes.io",
+                               "metadata": {"namespace": "ns",
+                                            "name": "test-policy"},
+                               "spec": spec}
+egress_network_policy_invalid_both_result = PolicyError
+
+# Ingress No ingress rules - should allow all.
 spec = {"ingress": [None]}
-network_policy_empty_rule = {"kind": "networkpolicy",
-                        "apiversion": "net.beta.kubernetes.io",
-                        "metadata": {"namespace": "ns",
-                                     "name": "test-policy"},
-                        "spec": spec}
-network_policy_empty_rule_result = [Rule(action="allow")]
+ingress_network_policy_empty_rule = {"kind": "networkpolicy",
+                                     "apiversion": "net.beta.kubernetes.io",
+                                     "metadata": {"namespace": "ns",
+                                                  "name": "test-policy"},
+                                     "spec": spec}
+ingress_network_policy_empty_rule_result = [Rule(action="allow")]
+
+# No egress rules - should allow all.
+spec = {"egress": [None]}
+egress_network_policy_empty_rule = {"kind": "networkpolicy",
+                                    "apiversion": "net.beta.kubernetes.io",
+                                    "metadata": {"namespace": "ns",
+                                                 "name": "test-policy"},
+                                    "spec": spec}
+egress_network_policy_empty_rule_result = [Rule(action="allow")]
+
+# Ingress NetworkPolicy with podSelector defined by expressions.
+ports = [{"port": 80, "protocol": "TCP"}]
+selector = {"matchExpressions": [{"key": "name", "operator": "Exists"},
+                                 {"key": "date", "operator": "DoesNotExist"}]}
+spec = {"ingress": [{"ports": ports}], "podSelector": selector}
+ingress_network_policy_pod_sel_expr = {"kind": "networkpolicy",
+                                       "apiversion": "net.beta.kubernetes.io",
+                                       "metadata": {"namespace": "ns",
+                                                    "name": "test-policy"},
+                                       "spec": spec}
+ingress_network_policy_pod_sel_expr_result = "calico/k8s_ns == 'ns' && has(name) && ! has(date)"
 
 # NetworkPolicy with podSelector defined by expressions.
 ports = [{"port": 80, "protocol": "TCP"}]
 selector = {"matchExpressions": [{"key": "name", "operator": "Exists"},
                                  {"key": "date", "operator": "DoesNotExist"}]}
-spec = {"ingress": [{"ports": ports}], "podSelector": selector}
-network_policy_pod_sel_expr = {"kind": "networkpolicy",
-                               "apiversion": "net.beta.kubernetes.io",
-                               "metadata": {"namespace": "ns",
-                                            "name": "test-policy"},
-                               "spec": spec}
-network_policy_pod_sel_expr_result = "calico/k8s_ns == 'ns' && has(name) && ! has(date)"
+spec = {"egress": [{"ports": ports}], "podSelector": selector}
+egress_network_policy_pod_sel_expr = {"kind": "networkpolicy",
+                                      "apiversion": "net.beta.kubernetes.io",
+                                      "metadata": {"namespace": "ns",
+                                                   "name": "test-policy"},
+                                      "spec": spec}
+egress_network_policy_pod_sel_expr_result = "calico/k8s_ns == 'ns' && has(name) && ! has(date)"
 
-# NetworkPolicy with podSelector defined by invalid expression.
+# Ingress NetworkPolicy with podSelector defined by invalid expression.
 ports = [{"port": 80, "protocol": "TCP"}]
 selector = {"matchExpressions": [{"key": "name",
                                   "operator": "SoundsLike",
                                   "values": ["alice", "bob"]}]}
 spec = {"ingress": [{"ports": ports}], "podSelector": selector}
-network_policy_invalid_op = {"kind": "networkpolicy",
-                               "apiversion": "net.beta.kubernetes.io",
-                               "metadata": {"namespace": "ns",
-                                            "name": "test-policy"},
-                               "spec": spec}
-network_policy_invalid_op_result = PolicyError
+ingress_network_policy_invalid_op = {"kind": "networkpolicy",
+                                     "apiversion": "net.beta.kubernetes.io",
+                                     "metadata": {"namespace": "ns",
+                                                  "name": "test-policy"},
+                                     "spec": spec}
+ingress_network_policy_invalid_op_result = PolicyError
+
+# Egress NetworkPolicy with podSelector defined by invalid expression.
+ports = [{"port": 80, "protocol": "TCP"}]
+selector = {"matchExpressions": [{"key": "name",
+                                  "operator": "SoundsLike",
+                                  "values": ["alice", "bob"]}]}
+spec = {"egress": [{"ports": ports}], "podSelector": selector}
+egress_network_policy_invalid_op = {"kind": "networkpolicy",
+                                    "apiversion": "net.beta.kubernetes.io",
+                                    "metadata": {"namespace": "ns",
+                                                 "name": "test-policy"},
+                                    "spec": spec}
+egress_network_policy_invalid_op_result = PolicyError
 
 
 class PolicyParserTest(unittest.TestCase):
     """
     Test class for PolicyParser class.
     """
+
     @parameterized.expand([
         (network_policy_empty, network_policy_empty_result),
-        (network_policy_ports, network_policy_ports_result),
-        (network_policy_froms, network_policy_froms_result),
-        (network_policy_both, network_policy_both_result),
-        (network_policy_from_pods_ns, network_policy_from_pods_ns_result),
-        (network_policy_from_pods_ns_expr, network_policy_from_pods_ns_expr_result),
-        (network_policy_from_all, network_policy_from_all_result),
-        (network_policy_invalid_both, network_policy_invalid_both_result),
-        (network_policy_empty_rule, network_policy_empty_rule_result),
+        (ingress_network_policy_ports, ingress_network_policy_ports_result),
+        (ingress_network_policy_froms, ingress_network_policy_froms_result),
+        (ingress_network_policy_both, ingress_network_policy_both_result),
+        (ingress_network_policy_from_pods_ns,
+         ingress_network_policy_from_pods_ns_result),
+        (ingress_network_policy_from_pods_ns_expr,
+         ingress_network_policy_from_pods_ns_expr_result),
+        (ingress_network_policy_from_all,
+         ingress_network_policy_from_all_result),
+        (ingress_network_policy_invalid_both,
+         ingress_network_policy_invalid_both_result),
+        (ingress_network_policy_empty_rule,
+         ingress_network_policy_empty_rule_result)
     ])
-    def test_parse_policy(self, policy, expected):
+    def test_parse_ingress_policy(self, policy, expected):
         # Parse it.
         self.parser = PolicyParser(policy)
 
@@ -202,8 +351,40 @@ class PolicyParserTest(unittest.TestCase):
             assert_equal(sorted(rules), sorted(expected))
 
     @parameterized.expand([
-        (network_policy_pod_sel_expr, network_policy_pod_sel_expr_result),
-        (network_policy_invalid_op, network_policy_invalid_op_result)
+        (egress_network_policy_ports, egress_network_policy_ports_result),
+        (egress_network_policy_froms, egress_network_policy_froms_result),
+        (egress_network_policy_both, egress_network_policy_both_result),
+        (egress_network_policy_from_pods_ns,
+         egress_network_policy_from_pods_ns_result),
+        (egress_network_policy_from_pods_ns_expr,
+         egress_network_policy_from_pods_ns_expr_result),
+        (egress_network_policy_from_all,
+         egress_network_policy_from_all_result),
+        (egress_network_policy_invalid_both,
+         egress_network_policy_invalid_both_result),
+        (egress_network_policy_empty_rule,
+         egress_network_policy_empty_rule_result)
+    ])
+    def test_parse_egress_policy(self, policy, expected):
+        # Parse it.
+        self.parser = PolicyParser(policy)
+
+        # If expected result is an exception, try to catch it.
+        try:
+            rules = self.parser.calculate_outbound_rules()
+        except Exception, e:
+            if isinstance(e, expected):
+                pass
+            else:
+                raise
+        else:
+            assert_equal(sorted(rules), sorted(expected))
+
+    @parameterized.expand([
+        (ingress_network_policy_pod_sel_expr,
+         ingress_network_policy_pod_sel_expr_result),
+        (ingress_network_policy_invalid_op,
+         ingress_network_policy_invalid_op_result)
     ])
     def test_pod_selector(self, policy, expected):
         # Parse it.

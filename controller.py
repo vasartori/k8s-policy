@@ -1,22 +1,21 @@
 #!/usr/bin/python
+import Queue
 import logging
 import os
-import Queue
-import requests
 import sys
-import simplejson as json
 import time
 from threading import Thread
 
+import requests
+import simplejson as json
 from pycalico.datastore import DatastoreClient
 from pycalico.datastore_datatypes import Rules, Rule
 
+from constants import *
+from handlers.namespace import add_update_namespace, delete_namespace
 from handlers.network_policy import (add_update_network_policy,
                                      delete_network_policy)
-from handlers.namespace import add_update_namespace, delete_namespace
 from handlers.pod import add_pod, update_pod, delete_pod
-
-from constants import *
 from version import VERSION
 
 _log = logging.getLogger(__name__)
@@ -108,7 +107,7 @@ class Controller(object):
         :return None
         """
         _log.debug("Setting %s %s handler: %s",
-                    resource_type, event_type, handler)
+                   resource_type, event_type, handler)
         key = (resource_type, event_type)
         self._handlers[key] = handler
 
@@ -186,7 +185,8 @@ class Controller(object):
 
     def _start_leader_thread(self):
         """
-        Starts a thread which periodically checks if this controller is the leader.
+        Starts a thread which periodically checks if this controller is the
+        leader.
         If determined that we are no longer the leader, exit.
         """
         t = Thread(target=self._watch_leadership)
@@ -287,7 +287,7 @@ class Controller(object):
             try:
                 handler(resource)
                 _log.info("Handled %s for %s: %s",
-                           event_type, resource_type, key)
+                          event_type, resource_type, key)
             except KeyError:
                 _log.exception("Invalid %s: %s", resource_type,
                                json.dumps(resource, indent=2))
@@ -314,7 +314,8 @@ class Controller(object):
             except Queue.Full:
                 _log.exception("Event queue full")
             except Exception:
-                _log.exception("Unhandled exception killed %s manager", resource_type)
+                _log.exception("Unhandled exception killed %s manager",
+                               resource_type)
             finally:
                 # Sleep for a second so that we don't tight-loop.
                 _log.warning("Re-starting watch on resource: %s",
@@ -393,7 +394,8 @@ class Controller(object):
         # If we hit an error, raise it.
         if resp.status_code != 200:
             _log.error("Error querying API: %s", resp.json())
-            raise KubernetesApiError("Failed to query resource: %s" % resource_type)
+            raise KubernetesApiError("Failed to query resource: %s" %
+                                     resource_type)
 
         # Get the list of existing API objects from the response, as
         # well as the latest resourceVersion.
@@ -431,20 +433,21 @@ class Controller(object):
         # Append the resource version - this indicates where the
         # watch should start.
         _log.debug("Getting API resources '%s' at version '%s'. stream=%s",
-                  path, resource_version, stream)
+                   path, resource_version, stream)
         if resource_version:
             path += "?resourceVersion=%s" % resource_version
 
         session = requests.Session()
         if self.auth_token:
-            session.headers.update({'Authorization': 'Bearer ' + self.auth_token})
+            session.headers.update({'Authorization': 'Bearer ' +
+                                                     self.auth_token})
         verify = CA_CERT_PATH if self.ca_crt_exists else False
         return session.get(path, verify=verify, stream=stream)
 
     def _is_leader(self):
         """
-        Returns True if this policy controller instance has been elected leader,
-        False otherwise.
+        Returns True if this policy controller instance has been elected
+        leader, False otherwise.
         """
         _log.debug("Checking if we are the elected leader.")
         response = requests.get(self._leader_election_url)

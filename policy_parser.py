@@ -20,6 +20,7 @@ class PolicyParser(object):
     They are defined by the NetworkPolicySpec in the /apis/networking API
     group.
     """
+
     def __init__(self, policy):
         """
         Create a Parser for a Kubernetes NetworkPolicy API object.
@@ -39,7 +40,8 @@ class PolicyParser(object):
         _log.debug("Calculating pod selector")
 
         # PodSelectors only select pods from the Policy's namespace.
-        calico_selectors = ["%s == '%s'" % (K8S_NAMESPACE_LABEL, self.namespace)]
+        calico_selectors = ["%s == '%s'" % (K8S_NAMESPACE_LABEL,
+                                            self.namespace)]
 
         calico_selectors += \
             self._calculate_selectors(self.policy["spec"]["podSelector"])
@@ -75,6 +77,34 @@ class PolicyParser(object):
         _log.debug("Calculated total set of rules: %s", rules)
         return rules
 
+    def calculate_outbound_rules(self):
+        """
+        Generate Calico Rule objects for this Policy's egress rules.
+
+        Returns a list of Calico datamodel Rules.
+        """
+        _log.debug("Calculating outbound rules")
+        rules = []
+
+        egress_rules = self.policy["spec"].get("egress")
+        if egress_rules:
+            _log.debug("Got %d egress rules: translating to Calico format",
+                       len(egress_rules))
+            for egress_rule in egress_rules:
+                _log.debug("Processing egress rule %s", egress_rule)
+                if egress_rule:
+                    # Convert ingress rule into Calico Rules.
+                    _log.debug("Adding rule %s", egress_rule)
+                    rules.extend(self._allow_incoming_to_rules(egress_rule))
+                else:
+                    # An empty rule means allow all traffic.
+                    _log.debug("Empty rule => allow all; skipping rest")
+                    rules.append(Rule(action="allow"))
+                    break
+
+        _log.debug("Calculated total set of rules: %s", rules)
+        return rules
+
     def _calculate_selectors(self, label_selector, key_format="%s"):
         """
         Generate Calico datamodel selectors for a Kubernetes LabelSelector.
@@ -89,8 +119,9 @@ class PolicyParser(object):
         if "matchLabels" in label_selector:
             labels = label_selector["matchLabels"]
             calico_selectors += [
-                "%s == '%s'" % (key_format % k, v) for k, v in labels.iteritems()
-            ]
+                "%s == '%s'" % (key_format % k, v) for k, v in
+                labels.iteritems()
+                ]
 
         # matchExpressions is a list of in/notin/exists/doesnotexist tests.
         if "matchExpressions" in label_selector:
@@ -102,7 +133,8 @@ class PolicyParser(object):
                 if operator == "In":
                     calico_selectors.append("%s in { %s }" % (key, value_list))
                 elif operator == "NotIn":
-                    calico_selectors.append("%s not in { %s }" % (key, value_list))
+                    calico_selectors.append("%s not in { %s }" %
+                                            (key, value_list))
                 elif operator == "Exists":
                     calico_selectors.append("has(%s)" % key)
                 elif operator == "DoesNotExist":
@@ -164,7 +196,8 @@ class PolicyParser(object):
             pods_present = "podSelector" in from_clause
             namespaces_present = "namespaceSelector" in from_clause
             _log.debug("Is 'podSelector:' present? %s", pods_present)
-            _log.debug("Is 'namespaceSelector:' present? %s", namespaces_present)
+            _log.debug("Is 'namespaceSelector:' present? %s",
+                       namespaces_present)
 
             if pods_present and namespaces_present:
                 # This is an error case according to the API.

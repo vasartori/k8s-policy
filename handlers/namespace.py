@@ -1,8 +1,10 @@
 import logging
+
 import simplejson as json
-from constants import *
 from pycalico.datastore import DatastoreClient
 from pycalico.datastore_datatypes import Rules, Rule
+
+from constants import *
 
 _log = logging.getLogger("__main__")
 client = DatastoreClient()
@@ -25,30 +27,46 @@ def add_update_namespace(namespace):
     try:
         policy_annotation = json.loads(policy_annotation)
     except ValueError, TypeError:
-        _log.exception("Failed to parse namespace annotations: %s", annotations)
+        _log.exception("Failed to parse namespace annotations: %s",
+                       annotations)
         return
 
     # Parsed the annotation - get data.  Might not be a dict, so be careful
     # to catch an AttributeError if it has no get() method.
     try:
-        ingress_isolation = policy_annotation.get("ingress", {}).get("isolation", "")
+        ingress_isolation = policy_annotation.get(
+            "ingress", {}).get("isolation", "")
+    except AttributeError:
+        _log.exception("Invalid namespace annotation: %s", policy_annotation)
+        return
+    try:
+        egress_isolation = policy_annotation.get(
+            "egress", {}).get("isolation", "")
     except AttributeError:
         _log.exception("Invalid namespace annotation: %s", policy_annotation)
         return
 
-    isolate_ns = ingress_isolation == "DefaultDeny"
+    isolate_ingress_ns = ingress_isolation == "DefaultDeny"
+    isolate_egress_ns = egress_isolation == "DefaultDeny"
     _log.debug("Namespace %s has %s.  Isolate=%s",
-            namespace_name, ingress_isolation, isolate_ns)
+               namespace_name, ingress_isolation, isolate_ingress_ns)
+    _log.debug("Namespace %s has %s.  Isolate=%s",
+               namespace_name, egress_isolation, isolate_egress_ns)
 
     # Determine the profile name to create.
     profile_name = NS_PROFILE_FMT % namespace_name
 
     # Determine the rules to use.
-    outbound_rules = [Rule(action="allow")]
-    if isolate_ns:
+    if isolate_ingress_ns:
         inbound_rules = [Rule(action="deny")]
     else:
         inbound_rules = [Rule(action="allow")]
+
+    if isolate_egress_ns:
+        outbound_rules = [Rule(action="deny")]
+    else:
+        outbound_rules = [Rule(action="allow")]
+
     rules = Rules(inbound_rules=inbound_rules,
                   outbound_rules=outbound_rules)
 

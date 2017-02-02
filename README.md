@@ -9,7 +9,7 @@ This repository contains the Calico Kubernetes policy controller, which implemen
 
 ![calico-policy-controller](calico-policy-controller.png)
 
-The controller uses the Kubernetes v1beta1 network policy API to configure Calico network policy.  The policy controller addon is deployed on top of Kubernetes as a pod. 
+This controller version uses the Kubernetes Thirdpartyresource (can be customized ) API to configure Calico network policy.  The policy controller addon is deployed on top of Kubernetes as a pod. 
 
 Calico can enforce NetworkPolicy on top of:
 - [Calico BGP networking](https://github.com/projectcalico/calico-containers/blob/master/docs/cni/kubernetes/KubernetesIntegration.md)

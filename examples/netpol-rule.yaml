@@ -1,5 +1,5 @@
-apiVersion: netpolicy.calico.int/v1
-kind: Netpolicy
+apiVersion: networkpolicy.calico.int/v1
+kind: NetworkPolicy
 metadata:
  name: test-network-policy
  namespace: default

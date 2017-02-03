@@ -42,10 +42,3 @@ spec:
             # This removes the need for KubeDNS to resolve the Service.
             - name: CONFIGURE_ETC_HOSTS
               value: "true"
-            # This values are optional. See on configuration.md what it do.
-            - name: RESOURCE_TYPE_NETWORK_POLICY
-              value: Netpolicy
-            - name: THIRDPARTYRESOURCE
-              value: netpolicy.calico.int
-            - name: THIRDPARTYRESOURCE_VERSION
-              value: v1

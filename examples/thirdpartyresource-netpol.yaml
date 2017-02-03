@@ -2,6 +2,6 @@ apiVersion: extensions/v1beta1
 description: Calico Policy Controller
 kind: ThirdPartyResource
 metadata:
-  name: netpolicy.calico.int
+  name: network-policy.calico.int
 versions:
 - name: v1

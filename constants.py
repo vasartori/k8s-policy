@@ -10,18 +10,14 @@ DEFAULT_API = "https://kubernetes.default:443"
 CA_CERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 # Resource types.
-RESOURCE_TYPE_NETWORK_POLICY = os.environ.get('RESOURCE_TYPE_NETWORK_POLICY',
-                                              'Netpolicy')
+RESOURCE_TYPE_NETWORK_POLICY = "NetworkPolicy"
 RESOURCE_TYPE_POD = "Pod"
 RESOURCE_TYPE_NAMESPACE = "Namespace"
 
 # API paths to NetworkPolicy objects.
-THIRDPARTYRESOURCE = os.environ.get('THIRDPARTYRESOURCE',
-                                    'netpolicy.calico.int')
-THIRDPARTYRESOURCE_VERSION = os.environ.get('THIRDPARTYRESOURCE_VERSION', 'v1')
-BETA_API = "%s/apis/" + THIRDPARTYRESOURCE + "/" + THIRDPARTYRESOURCE_VERSION
-NET_POLICY_PATH = BETA_API + "/" + THIRDPARTYRESOURCE.split('.')[0]
-NET_POLICY_WATCH_PATH = BETA_API + "/watch/" + THIRDPARTYRESOURCE.split('.')[0]
+BETA_API = "%s/apis/calico.int/v1"
+NET_POLICY_PATH = BETA_API + "/networkpolicies"
+NET_POLICY_WATCH_PATH = BETA_API + "/watch/networkpolicies"
 
 # Mapping of resource to api URL.
 GET_URLS = {RESOURCE_TYPE_POD: "%s/api/v1/pods",

@@ -69,9 +69,9 @@ class PolicyParser(object):
                     _log.debug("Adding rule %s", ingress_rule)
                     rules.extend(self._allow_incoming_to_rules(ingress_rule))
                 else:
-                    # An empty rule means allow all traffic.
-                    _log.debug("Empty rule => allow all; skipping rest")
-                    rules.append(Rule(action="allow"))
+                    # An empty rule means deny all traffic.
+                    _log.debug("Empty rule => deny all; skipping rest")
+                    rules.append(Rule(action="deny"))
                     break
 
         _log.debug("Calculated total set of rules: %s", rules)
@@ -95,11 +95,11 @@ class PolicyParser(object):
                 if egress_rule:
                     # Convert ingress rule into Calico Rules.
                     _log.debug("Adding rule %s", egress_rule)
-                    rules.extend(self._allow_incoming_to_rules(egress_rule))
+                    rules.extend(self._allow_outcoming_to_rules(egress_rule))
                 else:
                     # An empty rule means allow all traffic.
-                    _log.debug("Empty rule => allow all; skipping rest")
-                    rules.append(Rule(action="allow"))
+                    _log.debug("Empty rule => deny all; skipping rest")
+                    rules.append(Rule(action="deny"))
                     break
 
         _log.debug("Calculated total set of rules: %s", rules)
@@ -119,9 +119,8 @@ class PolicyParser(object):
         if "matchLabels" in label_selector:
             labels = label_selector["matchLabels"]
             calico_selectors += [
-                "%s == '%s'" % (key_format % k, v) for k, v in
-                labels.iteritems()
-                ]
+                "%s == '%s'" % (key_format % k, v) for k,
+                                                       v in labels.iteritems()]
 
         # matchExpressions is a list of in/notin/exists/doesnotexist tests.
         if "matchExpressions" in label_selector:
@@ -155,7 +154,7 @@ class PolicyParser(object):
         ports = allow_incoming_clause.get("ports")
         if ports:
             _log.debug("Parsing 'ports': %s", ports)
-            to_args = self._generate_to_args(ports)
+            to_args = self._generate_ports_args(ports)
         else:
             _log.debug("No ports specified, allow all protocols / ports")
             to_args = [{}]
@@ -165,6 +164,43 @@ class PolicyParser(object):
         if froms:
             _log.debug("Parsing 'from': %s", froms)
             from_args = self._generate_from_args(froms)
+        else:
+            _log.debug("No from specified, allow from all sources")
+            from_args = [{}]
+
+        # Create a Rule per-protocol, per-from-clause.
+        _log.debug("Creating rules")
+        rules = []
+        for to_arg in to_args:
+            for from_arg in from_args:
+                _log.debug("\tAllow from %s to %s", from_arg, to_arg)
+                args = {"action": "allow"}
+                args.update(from_arg)
+                args.update(to_arg)
+                rules.append(Rule(**args))
+        return rules
+
+    def _allow_outcoming_to_rules(self, allow_outcoming_clause):
+        """
+        Takes a single "allowoutcoming" rule from a NetworkPolicy object
+        and returns a list of Calico Rule object with implement it.
+        """
+        _log.debug("Processing egress rule: %s", allow_outcoming_clause)
+
+        # Generate to "to" arguments for this Rule.
+        ports = allow_outcoming_clause.get("ports")
+        if ports:
+            _log.debug("Parsing 'ports': %s", ports)
+            to_args = self._generate_ports_args(ports)
+        else:
+            _log.debug("No ports specified, allow all protocols / ports")
+            to_args = [{}]
+
+        # Generate "from" arguments for this Rule.
+        froms = allow_outcoming_clause.get("from")
+        if froms:
+            _log.debug("Parsing 'from': %s", froms)
+            from_args = self._generate_to_args(froms)
         else:
             _log.debug("No from specified, allow from all sources")
             from_args = [{}]
@@ -195,7 +231,9 @@ class PolicyParser(object):
             _log.debug("Parsing 'from' clause: %s", from_clause)
             pods_present = "podSelector" in from_clause
             namespaces_present = "namespaceSelector" in from_clause
+            network_present = "networkSelector" in from_clause
             _log.debug("Is 'podSelector:' present? %s", pods_present)
+            _log.debug("Is 'networkSelector:' present? %s", network_present)
             _log.debug("Is 'namespaceSelector:' present? %s",
                        namespaces_present)
 
@@ -204,6 +242,10 @@ class PolicyParser(object):
                 msg = "Policy API does not support both 'pods' and " \
                       "'namespaces' selectors."
                 raise PolicyError(msg, self.policy)
+            elif network_present:
+                net_selector = from_clause["networkSelector"] or {}
+                _log.debug("Add Network Selector: %s", net_selector)
+                from_args.append({"src_net": net_selector})
             elif pods_present:
                 # There is a pod selector in this "from" clause.
                 pod_selector = from_clause["podSelector"] or {}
@@ -240,7 +282,73 @@ class PolicyParser(object):
                     from_args.append({"src_selector": selector})
         return from_args
 
-    def _generate_to_args(self, ports):
+
+    def _generate_to_args(self, froms):
+        """
+        Generate an arguments dictionary suitable for passing to
+        the constructor of a libcalico Rule object using the given
+        "from" clauses.
+        """
+        from_args = []
+        for from_clause in froms:
+            # We need to check if the key exists, not just if there is
+            # a non-null value.  The presence of the key with a null
+            # value means "select all".
+            _log.debug("Parsing 'from' clause: %s", from_clause)
+            pods_present = "podSelector" in from_clause
+            namespaces_present = "namespaceSelector" in from_clause
+            network_present = "networkSelector" in from_clause
+            _log.debug("Is 'podSelector:' present? %s", pods_present)
+            _log.debug("Is 'networkSelector:' present? %s", network_present)
+            _log.debug("Is 'namespaceSelector:' present? %s",
+                       namespaces_present)
+
+            if pods_present and namespaces_present:
+                # This is an error case according to the API.
+                msg = "Policy API does not support both 'pods' and " \
+                      "'namespaces' selectors."
+                raise PolicyError(msg, self.policy)
+            elif network_present:
+                net_selector = from_clause["networkSelector"] or {}
+                _log.debug("Add Network Selector: %s", net_selector)
+                from_args.append({"dst_net": net_selector})
+            elif pods_present:
+                # There is a pod selector in this "from" clause.
+                pod_selector = from_clause["podSelector"] or {}
+                _log.debug("Allow from podSelector: %s", pod_selector)
+                selectors = self._calculate_selectors(pod_selector)
+
+                # We can only select on pods in this namespace.
+                selectors.append("%s == '%s'" % (K8S_NAMESPACE_LABEL,
+                                                 self.namespace))
+                selector = " && ".join(selectors)
+
+                # Append the selector to the from args.
+                _log.debug("Allowing pods which match: %s", selector)
+                from_args.append({"src_selector": selector})
+            elif namespaces_present:
+                # There is a namespace selector.  Namespace labels are
+                # applied to each pod in the namespace using
+                # the per-namespace profile.  We can select on namespace
+                # labels using the NS_LABEL_KEY_FMT modifier.
+                namespaces = from_clause["namespaceSelector"] or {}
+                _log.debug("Allow from namespaceSelector: %s", namespaces)
+                selectors = self._calculate_selectors(namespaces,
+                                                      NS_LABEL_KEY_FMT)
+                selector = " && ".join(selectors)
+                if selector:
+                    # Allow from the selected namespaces.
+                    _log.debug("Allowing from namespaces which match: %s",
+                               selector)
+                    from_args.append({"src_selector": selector})
+                else:
+                    # Allow from all pods in all namespaces.
+                    _log.debug("Allowing from all pods in all namespaces")
+                    selector = "has(%s)" % K8S_NAMESPACE_LABEL
+                    from_args.append({"src_selector": selector})
+        return from_args
+
+    def _generate_ports_args(self, ports):
         """
         Generates an arguments dictionary suitable for passing to
         the constructor of a libcalico Rule object from the given ports.

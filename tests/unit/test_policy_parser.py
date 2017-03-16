@@ -85,7 +85,8 @@ egress_network_policy_froms = {"kind": "networkpolicy",
                                "spec": spec}
 egress_network_policy_froms_result = [
     Rule(action="allow",
-         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'")
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == "
+                     "'ns'")
 ]
 
 # Ingress NetworkPolicy with ports and pods defined by labels.
@@ -119,11 +120,49 @@ egress_network_policy_both = {"kind": "networkpolicy",
                               "spec": spec}
 egress_network_policy_both_result = [
     Rule(action="allow",
-         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == "
+                     "'ns'",
          dst_ports=[80], protocol="tcp"),
     Rule(action="allow",
-         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == 'ns'",
+         src_selector="tier == 'db' && role == 'diags' && calico/k8s_ns == "
+                     "'ns'",
          dst_ports=[443], protocol="udp")
+]
+
+
+# Egress NetworkPolicy defined by network selector labels.
+froms = [{"networkSelector": "10.10.10.10/24"}]
+ports = [{"port": 80, "protocol": "TCP"},
+         {"port": 443, "protocol": "UDP"}]
+spec = {"egress": [{"from": froms, "ports": ports}]}
+egress_network_policy_net_dest = {"kind": "networkpolicy",
+                              "apiversion": "net.beta.kubernetes.io",
+                              "metadata": {"namespace": "ns",
+                                           "name": "test-policy"},
+                              "spec": spec}
+egress_network_policy_net_dest_result = [
+    Rule(action="allow", dst_ports=[80], protocol="tcp",
+         dst_net="10.10.10.10/24"),
+    Rule(action="allow", dst_ports=[443], protocol="udp",
+         dst_net="10.10.10.10/24")
+]
+
+
+# Ingress NetworkPolicy defined by network selector labels.
+froms = [{"networkSelector": "10.10.10.10/24"}]
+ports = [{"port": 80, "protocol": "TCP"},
+         {"port": 443, "protocol": "UDP"}]
+spec = {"ingress": [{"from": froms, "ports": ports}]}
+ingress_network_policy_net_dest = {"kind": "networkpolicy",
+                              "apiversion": "net.beta.kubernetes.io",
+                              "metadata": {"namespace": "ns",
+                                           "name": "test-policy"},
+                              "spec": spec}
+ingress_network_policy_net_dest_result = [
+    Rule(action="allow", dst_ports=[80], protocol="tcp",
+         src_net="10.10.10.10/24"),
+    Rule(action="allow", dst_ports=[443], protocol="udp",
+         src_net="10.10.10.10/24")
 ]
 
 # Ingress NetworkPolicy with pods and namespaces defined by labels.
@@ -252,16 +291,16 @@ ingress_network_policy_empty_rule = {"kind": "networkpolicy",
                                      "metadata": {"namespace": "ns",
                                                   "name": "test-policy"},
                                      "spec": spec}
-ingress_network_policy_empty_rule_result = [Rule(action="allow")]
+ingress_network_policy_empty_rule_result = [Rule(action="deny")]
 
-# No egress rules - should allow all.
+# No egress rules - should deny all.
 spec = {"egress": [None]}
 egress_network_policy_empty_rule = {"kind": "networkpolicy",
                                     "apiversion": "net.beta.kubernetes.io",
                                     "metadata": {"namespace": "ns",
                                                  "name": "test-policy"},
                                     "spec": spec}
-egress_network_policy_empty_rule_result = [Rule(action="allow")]
+egress_network_policy_empty_rule_result = [Rule(action="deny")]
 
 # Ingress NetworkPolicy with podSelector defined by expressions.
 ports = [{"port": 80, "protocol": "TCP"}]
@@ -333,7 +372,9 @@ class PolicyParserTest(unittest.TestCase):
         (ingress_network_policy_invalid_both,
          ingress_network_policy_invalid_both_result),
         (ingress_network_policy_empty_rule,
-         ingress_network_policy_empty_rule_result)
+         ingress_network_policy_empty_rule_result),
+        (ingress_network_policy_net_dest,
+         ingress_network_policy_net_dest_result)
     ])
     def test_parse_ingress_policy(self, policy, expected):
         # Parse it.
@@ -363,7 +404,9 @@ class PolicyParserTest(unittest.TestCase):
         (egress_network_policy_invalid_both,
          egress_network_policy_invalid_both_result),
         (egress_network_policy_empty_rule,
-         egress_network_policy_empty_rule_result)
+         egress_network_policy_empty_rule_result),
+        (egress_network_policy_net_dest,
+         egress_network_policy_net_dest_result)
     ])
     def test_parse_egress_policy(self, policy, expected):
         # Parse it.

@@ -118,9 +118,8 @@ class PolicyParser(object):
         # value) for all keys.
         if "matchLabels" in label_selector:
             labels = label_selector["matchLabels"]
-            calico_selectors += [
-                "%s == '%s'" % (key_format % k, v) for k,
-                                                       v in labels.iteritems()]
+            calico_selectors += ["%s == '%s'" % (key_format % k, v) for k, v in
+                                 labels.iteritems()]
 
         # matchExpressions is a list of in/notin/exists/doesnotexist tests.
         if "matchExpressions" in label_selector:
@@ -191,25 +190,25 @@ class PolicyParser(object):
         ports = allow_outcoming_clause.get("ports")
         if ports:
             _log.debug("Parsing 'ports': %s", ports)
-            to_args = self._generate_ports_args(ports)
+            to_ports = self._generate_ports_args(ports)
         else:
             _log.debug("No ports specified, allow all protocols / ports")
-            to_args = [{}]
+            to_ports = [{}]
 
-        # Generate "from" arguments for this Rule.
-        froms = allow_outcoming_clause.get("from")
-        if froms:
-            _log.debug("Parsing 'from': %s", froms)
-            from_args = self._generate_to_args(froms)
+        # Generate "to" arguments for this Rule.
+        tos = allow_outcoming_clause.get("to")
+        if tos:
+            _log.debug("Parsing 'from': %s", tos)
+            to_args = self._generate_to_args(tos)
         else:
             _log.debug("No from specified, allow from all sources")
-            from_args = [{}]
+            to_args = [{}]
 
         # Create a Rule per-protocol, per-from-clause.
         _log.debug("Creating rules")
         rules = []
-        for to_arg in to_args:
-            for from_arg in from_args:
+        for to_arg in to_ports:
+            for from_arg in to_args:
                 _log.debug("\tAllow from %s to %s", from_arg, to_arg)
                 args = {"action": "allow"}
                 args.update(from_arg)
@@ -282,12 +281,11 @@ class PolicyParser(object):
                     from_args.append({"src_selector": selector})
         return from_args
 
-
     def _generate_to_args(self, froms):
         """
         Generate an arguments dictionary suitable for passing to
         the constructor of a libcalico Rule object using the given
-        "from" clauses.
+        "to" clauses.
         """
         from_args = []
         for from_clause in froms:

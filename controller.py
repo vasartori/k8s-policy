@@ -185,8 +185,7 @@ class Controller(object):
 
     def _start_leader_thread(self):
         """
-        Starts a thread which periodically checks if this controller is the
-        leader.
+        Starts a thread which periodically checks if this controller is the leader.
         If determined that we are no longer the leader, exit.
         """
         t = Thread(target=self._watch_leadership)
@@ -314,8 +313,7 @@ class Controller(object):
             except Queue.Full:
                 _log.exception("Event queue full")
             except Exception:
-                _log.exception("Unhandled exception killed %s manager",
-                               resource_type)
+                _log.exception("Unhandled exception killed %s manager", resource_type)
             finally:
                 # Sleep for a second so that we don't tight-loop.
                 _log.warning("Re-starting watch on resource: %s",
@@ -394,8 +392,7 @@ class Controller(object):
         # If we hit an error, raise it.
         if resp.status_code != 200:
             _log.error("Error querying API: %s", resp.json())
-            raise KubernetesApiError("Failed to query resource: %s" %
-                                     resource_type)
+            raise KubernetesApiError("Failed to query resource: %s" % resource_type)
 
         # Get the list of existing API objects from the response, as
         # well as the latest resourceVersion.
@@ -439,15 +436,14 @@ class Controller(object):
 
         session = requests.Session()
         if self.auth_token:
-            session.headers.update({'Authorization': 'Bearer ' +
-                                                     self.auth_token})
+            session.headers.update({'Authorization': 'Bearer ' + self.auth_token})
         verify = CA_CERT_PATH if self.ca_crt_exists else False
-        return session.get(path, verify=verify, stream=stream)
+        return session.get(path, verify=verify, stream=stream, timeout=(5, 10))
 
     def _is_leader(self):
         """
-        Returns True if this policy controller instance has been elected
-        leader, False otherwise.
+        Returns True if this policy controller instance has been elected leader,
+        False otherwise.
         """
         _log.debug("Checking if we are the elected leader.")
         response = requests.get(self._leader_election_url)

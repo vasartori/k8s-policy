@@ -77,7 +77,7 @@ ingress_network_policy_froms_result = [
 
 # Egress NetworkPolicy with only pods defined by labels.
 froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
-spec = {"egress": [{"from": froms}]}
+spec = {"egress": [{"to": froms}]}
 egress_network_policy_froms = {"kind": "networkpolicy",
                                "apiversion": "net.beta.kubernetes.io",
                                "metadata": {"namespace": "ns",
@@ -112,7 +112,7 @@ ingress_network_policy_both_result = [
 froms = [{"podSelector": {"matchLabels": {"role": "diags", "tier": "db"}}}]
 ports = [{"port": 80, "protocol": "TCP"},
          {"port": 443, "protocol": "UDP"}]
-spec = {"egress": [{"from": froms, "ports": ports}]}
+spec = {"egress": [{"to": froms, "ports": ports}]}
 egress_network_policy_both = {"kind": "networkpolicy",
                               "apiversion": "net.beta.kubernetes.io",
                               "metadata": {"namespace": "ns",
@@ -134,7 +134,7 @@ egress_network_policy_both_result = [
 froms = [{"networkSelector": "10.10.10.10/24"}]
 ports = [{"port": 80, "protocol": "TCP"},
          {"port": 443, "protocol": "UDP"}]
-spec = {"egress": [{"from": froms, "ports": ports}]}
+spec = {"egress": [{"to": froms, "ports": ports}]}
 egress_network_policy_net_dest = {"kind": "networkpolicy",
                               "apiversion": "net.beta.kubernetes.io",
                               "metadata": {"namespace": "ns",
@@ -182,7 +182,7 @@ ingress_network_policy_from_pods_ns_result = [
 # Egress NetworkPolicy with pods and namespaces defined by labels.
 froms = [{"namespaceSelector": {"matchLabels": {"role": "prod"}}},
          {"podSelector": {"matchLabels": {"tier": "db"}}}]
-spec = {"egress": [{"from": froms}]}
+spec = {"egress": [{"to": froms}]}
 egress_network_policy_from_pods_ns = {"kind": "networkpolicy",
                                       "apiversion": "net.beta.kubernetes.io",
                                       "metadata": {"namespace": "ns",
@@ -222,7 +222,7 @@ froms = [{"namespaceSelector": {"matchExpressions": [{"key": "role",
          {"podSelector": {"matchExpressions": [{"key": "tier",
                                                 "operator": "In",
                                                 "values": ["db"]}]}}]
-spec = {"egress": [{"from": froms}]}
+spec = {"egress": [{"to": froms}]}
 egress_network_policy_from_pods_ns_expr = {"kind": "networkpolicy",
                                            "apiversion": "net.beta.kubernetes.io",
                                            "metadata": {"namespace": "ns",
@@ -253,7 +253,7 @@ ingress_network_policy_from_all_result = [
 # Egress NetworkPolicy all pods and all namespaces.
 froms = [{"namespaceSelector": None},
          {"podSelector": None}]
-spec = {"egress": [{"from": froms}]}
+spec = {"egress": [{"to": froms}]}
 egress_network_policy_from_all = {"kind": "networkpolicy",
                                   "apiversion": "net.beta.kubernetes.io",
                                   "metadata": {"namespace": "ns",
@@ -276,7 +276,7 @@ ingress_network_policy_invalid_both_result = PolicyError
 
 # Egress Invalid: Cannot declare both namespaces and pods in same from.
 froms = [{"namespaceSelector": None, "podSelector": None}]
-spec = {"egress": [{"from": froms}]}
+spec = {"egress": [{"to": froms}]}
 egress_network_policy_invalid_both = {"kind": "networkpolicy",
                                "apiversion": "net.beta.kubernetes.io",
                                "metadata": {"namespace": "ns",
